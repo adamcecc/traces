@@ -86,7 +86,14 @@ def get_cflags(args):
 
     return cflags
 
-
+def fixup_dependency_option(args, o_file):
+    for index, arg in enumerate(args):
+        if arg == '-MMD' or arg == '-MD':
+            d_file = os.path.splitext(o_file)[0] + '.d'
+            args.extend(['-MF', d_file])
+            return
+        
+    
 def main():
     args = sys.argv[1:]
     if '-c' not in args:
@@ -98,6 +105,7 @@ def main():
             c_index = i
             break
 
+    print ' '.join(args)
     if c_index == -1:
         ret = spawn(args)
         return ret
@@ -126,6 +134,8 @@ def main():
         pp_file = o_file + '.pp'
         cpp_args[o_index] = pp_file
 
+    fixup_dependency_option(args, o_file)    
+    print ' '.join(args), 'middle'
     # Hack for dealing with sources that use _GNU_SOURCE
     if '#define _GNU_SOURCE' in source_data:
         cpp_args.extend(["-w", "-D", "_GNU_SOURCE"])
@@ -152,6 +162,7 @@ def main():
             comp_args.extend(['-o', o_file])
 
         comp_args[c_index] = out_pp_file
+        print ' '.join(comp_args)
         ret = spawn(comp_args)
         return ret;
     finally:
